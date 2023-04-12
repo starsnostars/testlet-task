@@ -1,11 +1,48 @@
 ﻿using TestletLib;
+using TestletLib.Models;
 using Xunit;
 
 namespace TestletLibTests
 {
   public class TestletTests
   {
-    private readonly Random random = new Random();
+    [Fact]
+    public void Ctor_PassedValidArguments_DoesNotThrow()
+    {
+      var data = GetTestItems();
+
+      var exception = Record.Exception(() => new Testlet("1", data));
+
+      Assert.Null(exception);
+    }
+
+    [Theory]
+    [InlineData(3, 0)]
+    [InlineData(1, 9)]
+    [InlineData(6, 10)]
+    [InlineData(0, 0)]
+    public void Ctor_PassedInvalidArguments_ThrowsArgumentException(int operational, int pretest)
+    {
+      var data = GetTestItems(operational, pretest);
+
+      var notEnoughItems = Record.Exception(() => new Testlet("1", data));
+
+      Assert.NotNull(notEnoughItems);
+      Assert.IsType<ArgumentException>(notEnoughItems);
+    }
+
+    [Fact]
+    public void Randomize_NormalFlow_DoesNotMutateInputData()
+    {
+      var data = GetTestItems();
+      var sut = new Testlet("1", GetTestItems());
+      
+      var res = sut.Randomize();
+
+      var mutatedItems = res.Where(i => !data.Any(d => d.ItemId == i.ItemId));
+
+      Assert.Empty(mutatedItems);
+    }
 
     [Fact]
     public void Randomize_NormalFlow_DoesNotHaveDuplicates()
@@ -45,7 +82,7 @@ namespace TestletLibTests
     public void Randomize_NormalFlow_ItemsAreInRandomOrder()
     {
       var data = GetTestItems();
-      var sut = new Testlet("1", GetTestItems());
+      var sut = new Testlet("1", data);
 
       var res = sut.Randomize();
 
@@ -54,10 +91,23 @@ namespace TestletLibTests
       Assert.False(sameOrder);
     }
 
-    private List<Item> GetTestItems(int count = 10)
+    [Fact]
+    public void Randomize_CalledMultipleTimes_ReturnsItemsInDifferentOrderOnEachCall()
+    {
+      var sut = new Testlet("1", GetTestItems());
+
+      var a = sut.Randomize();
+      var b = sut.Randomize();
+
+      var sameOrder = AreinSameOrder(a, b);
+
+      Assert.False(sameOrder);
+    }
+
+    private List<Item> GetTestItems(int operational = 6, int pretest = 4)
     {
       return Enumerable
-        .Range(0, 6)
+        .Range(0, operational)
         .Select(i => new Item 
           { 
             ItemId = i.ToString(),
@@ -65,10 +115,10 @@ namespace TestletLibTests
           })
         .Concat(
           Enumerable
-            .Range(0, 4)
+            .Range(0, pretest)
             .Select(i => new Item
               {
-                ItemId = (i + 6).ToString(),
+                ItemId = (i + operational).ToString(),
                 ItemType = ItemTypeEnum.Pretest
               })
         )
