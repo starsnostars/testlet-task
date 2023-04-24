@@ -1,6 +1,6 @@
 ﻿namespace TestletLib.Models
 {
-  public enum ItemTypeEnum
+  public enum ItemType
   {
     Pretest = 0,
     Operational = 1

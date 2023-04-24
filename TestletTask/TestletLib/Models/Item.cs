@@ -2,7 +2,8 @@
 {
   public class Item
   {
-    public string ItemId;
-    public ItemTypeEnum ItemType;
+    public string ItemId { get; set; }
+    
+    public ItemType ItemType { get; set; }
   }
 }
