@@ -6,7 +6,7 @@ namespace TestletLib
 {
   public class Testlet
   {
-    private List<Item> items;
+    private List<Item> _items;
 
     public string TestletId { get; set; }
     
@@ -15,24 +15,32 @@ namespace TestletLib
       ValidateItems(items);
 
       TestletId = testletId;
-      this.items = items;
+      _items = items;
     }
 
     public List<Item> Randomize()
     {
-      return this.items.Shuffle();
+      var warmup = _items
+        .Where(i => i.ItemType == ItemType.Pretest)
+        .Shuffle()
+        .Take(Constants.WarmupItemsCount)
+        .ToList();
+
+      var main = _items
+        .Where(i => !warmup.Contains(i))
+        .Shuffle()
+        .Take(Constants.MaxItemsCount - Constants.WarmupItemsCount);
+
+      return warmup.Concat(main).ToList();
     }
 
     private static void ValidateItems(List<Item> items)
     {
-      if (items.Count != Constants.MaxItemsCount)
+      if (items.Count(i => i.ItemType == ItemType.Pretest) != Constants.PretestItemsCount ||
+        items.Count(i => i.ItemType == ItemType.Operational) != Constants.OperationalItemsCount)
       {
-        throw new ArgumentException($"{nameof(items)} should contain {Constants.MaxItemsCount} elements");
-      }
-
-      if (items.Count(i => i.ItemType == ItemType.Pretest) != Constants.PretestItemsCount)
-      {
-        throw new ArgumentException($"{nameof(items)} should contain {Constants.PretestItemsCount} pretest items");
+        throw new ArgumentException(
+          $"{nameof(items)} should contain {Constants.PretestItemsCount} pretest and {Constants.OperationalItemsCount} operational items");
       }
     }
   }
